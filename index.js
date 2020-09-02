@@ -1,8 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const cors = require('cors')
+const Person = require('./models/person')
 app.use(express.static('build'))
-
 app.use(cors())
 app.use(express.json())
 
@@ -28,6 +29,7 @@ let persons = [
     "id": 4
   }
 ]
+
 app.get('/', (req, res) => {
   res.send('<h1>Hello World!</h1>')
 })
@@ -38,25 +40,32 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(persons => {
+    res.json(persons)
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  // console.log("this si get")
-  const id = Number(request.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  Person.findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => {
+      console.log(error)
+      response.status(500).end()
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== id)
-
-  response.status(204).end()
+  Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 const generateId = () => {
@@ -72,7 +81,7 @@ const generateRandomId = (max) => {
 
 app.post('/api/persons', (request, response) => {
   const body = request.body
-  console.log(request.body)
+
   if (!body.name || !body.number) {
     return response.status(400).json({ 
       error: 'Name or number missing' 
@@ -85,18 +94,18 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
     id: generateRandomId(50000),
-  }
+  })
 
-  persons = persons.concat(person)
-
-  response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
