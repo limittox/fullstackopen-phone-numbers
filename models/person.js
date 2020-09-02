@@ -1,26 +1,33 @@
 const mongoose = require('mongoose')
 
-const url =
-  `mongodb+srv://fullstack:mithun12@cluster0.4ikcq.mongodb.net/person?retryWrites=true&w=majority`
+const url = process.env.MONGODB_URI
+
+console.log('connecting to', url)
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(result => {
+    console.log('connected to MongoDB')
+  })
+  .catch((error) => {
+    console.log('error connecting to MongoDB:', error.message)
+  })
 
 const personSchema = new mongoose.Schema({
-  person: String,
+  name: String,
   number: Number,
 })
 
-const Person = mongoose.model('Person', personSchema)
+// const Person = mongoose.model('Person', personSchema)
 
-const person = new Person({
-  person: process.argv[3],
-  number: process.argv[4],
-})
+// const person = new Person({
+//   person: process.argv[3],
+//   number: process.argv[4],
+// })
 
-person.save().then(result => {
-  console.log('Person saved'),
-  mongoose.connection.close()
-})
+// person.save().then(result => {
+//   console.log('Person saved'),
+//   mongoose.connection.close()
+// })
 
 personSchema.set('toJSON', {
   transform: (document, returnedObject) => {
@@ -29,3 +36,5 @@ personSchema.set('toJSON', {
     delete returnedObject.__v
   }
 })
+
+module.exports = mongoose.model('Person', personSchema)
